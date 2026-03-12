@@ -1,0 +1,174 @@
+{
+  "stage_id": "2026-03-06__2026-03-12",
+  "generated_at": "2026-03-12 14:25:44",
+  "analysis_completeness": "complete",
+  "stage_context_analysis": {
+    "time_range": {
+      "start": "2026-03-06",
+      "end": "2026-03-12"
+    },
+    "material_count": 9,
+    "total_content_length": 6597,
+    "stage_rationale": "14 天窗口内出现集中输入：10 个文件，约 7347 字"
+  },
+  "theme_structure_analysis": {
+    "core_themes": [
+      "Python",
+      "JavaScript",
+      "Rust",
+      "openai-python",
+      "OpenAI"
+    ],
+    "structure_notes": "标题与主题出现频率较为集中，材料整体具备一定主题聚焦度。"
+  },
+  "cognitive_pattern_analysis": {
+    "average_heading_count": 3.78,
+    "pattern_note": "文本结构相对扁平，更多呈现为连续记录。"
+  },
+  "skill_evolution_analysis": {
+    "dominant_formats": {
+      "github-trending": 9
+    },
+    "skill_trace_note": "当前阶段主要通过文本方式进行知识记录与整理。"
+  },
+  "knowledge_gap_analysis": {
+    "low_density_materials": [],
+    "gap_note": "当前阶段材料整体信息密度较为均衡。"
+  },
+  "ai_stage_insight": "【阶段核心特征】\n（占位标记：如果你看到这段文字，说明当前阶段尚未由模型生成语义分析。）\n\n【可能的变化信号】\n（占位标记：模型尚未介入，暂无变化信号判断。）\n\n【当前分析的边界与不确定性】\n（占位标记：此处未使用任何大模型生成内容。）",
+  "trending_context": {
+    "scraped_at": "2026-03-12T06:25:44",
+    "repositories": [
+      {
+        "rank": 1,
+        "full_name": "anthropics/claude-code",
+        "name": "claude-code",
+        "owner": "anthropics",
+        "description": "Claude Code — AI-powered CLI coding assistant",
+        "language": "TypeScript",
+        "stars": 18400,
+        "stars_today": 342,
+        "forks": 1200,
+        "since": "daily",
+        "url": "https://github.com/anthropics/claude-code"
+      },
+      {
+        "rank": 2,
+        "full_name": "openai/openai-python",
+        "name": "openai-python",
+        "owner": "openai",
+        "description": "The official Python library for the OpenAI API",
+        "language": "Python",
+        "stars": 22100,
+        "stars_today": 278,
+        "forks": 3100,
+        "since": "daily",
+        "url": "https://github.com/openai/openai-python"
+      },
+      {
+        "rank": 3,
+        "full_name": "vercel/next.js",
+        "name": "next.js",
+        "owner": "vercel",
+        "description": "The React Framework — App Router, Server Components, streaming",
+        "language": "JavaScript",
+        "stars": 121000,
+        "stars_today": 215,
+        "forks": 25400,
+        "since": "daily",
+        "url": "https://github.com/vercel/next.js"
+      },
+      {
+        "rank": 4,
+        "full_name": "microsoft/vscode",
+        "name": "vscode",
+        "owner": "microsoft",
+        "description": "Visual Studio Code — Open Source IDE by Microsoft",
+        "language": "TypeScript",
+        "stars": 161000,
+        "stars_today": 198,
+        "forks": 28100,
+        "since": "daily",
+        "url": "https://github.com/microsoft/vscode"
+      },
+      {
+        "rank": 5,
+        "full_name": "huggingface/transformers",
+        "name": "transformers",
+        "owner": "huggingface",
+        "description": "State-of-the-art ML for Jax, PyTorch, and TensorFlow",
+        "language": "Python",
+        "stars": 129000,
+        "stars_today": 187,
+        "forks": 25600,
+        "since": "daily",
+        "url": "https://github.com/huggingface/transformers"
+      },
+      {
+        "rank": 6,
+        "full_name": "rust-lang/rust",
+        "name": "rust",
+        "owner": "rust-lang",
+        "description": "Empowering everyone to build reliable and efficient software",
+        "language": "Rust",
+        "stars": 95000,
+        "stars_today": 163,
+        "forks": 12200,
+        "since": "daily",
+        "url": "https://github.com/rust-lang/rust"
+      },
+      {
+        "rank": 7,
+        "full_name": "ggerganov/llama.cpp",
+        "name": "llama.cpp",
+        "owner": "ggerganov",
+        "description": "LLM inference in C/C++ — run large language models locally",
+        "language": "C++",
+        "stars": 67000,
+        "stars_today": 154,
+        "forks": 9800,
+        "since": "daily",
+        "url": "https://github.com/ggerganov/llama.cpp"
+      },
+      {
+        "rank": 8,
+        "full_name": "langchain-ai/langchain",
+        "name": "langchain",
+        "owner": "langchain-ai",
+        "description": "Build context-aware reasoning applications with LangChain",
+        "language": "Python",
+        "stars": 91000,
+        "stars_today": 142,
+        "forks": 14500,
+        "since": "daily",
+        "url": "https://github.com/langchain-ai/langchain"
+      },
+      {
+        "rank": 9,
+        "full_name": "astral-sh/uv",
+        "name": "uv",
+        "owner": "astral-sh",
+        "description": "An extremely fast Python package and project manager, written in Rust",
+        "language": "Rust",
+        "stars": 31000,
+        "stars_today": 136,
+        "forks": 890,
+        "since": "daily",
+        "url": "https://github.com/astral-sh/uv"
+      },
+      {
+        "rank": 10,
+        "full_name": "facebook/react",
+        "name": "react",
+        "owner": "facebook",
+        "description": "The library for web and native user interfaces",
+        "language": "JavaScript",
+        "stars": 226000,
+        "stars_today": 121,
+        "forks": 46200,
+        "since": "daily",
+        "url": "https://github.com/facebook/react"
+      }
+    ]
+  }
+}
