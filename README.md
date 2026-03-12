@@ -224,6 +224,31 @@ Keep it minimal. Keep it sharp.
 
 ---
 
+---
+
+<!-- auto_optimize:start -->
+
+## Overview — Latest Trending Stats
+
+> Last updated: **2026-03-12 06:46 UTC** · Source: `simulated`
+
+| Rank | Repository | Language | ★ Today |
+|------|-----------|----------|---------|
+| 1 | `anthropics/claude-code` | TypeScript | +342 |
+| 2 | `openai/openai-python` | Python | +278 |
+| 3 | `vercel/next.js` | JavaScript | +215 |
+| 4 | `microsoft/vscode` | TypeScript | +198 |
+| 5 | `huggingface/transformers` | Python | +187 |
+| 6 | `rust-lang/rust` | Rust | +163 |
+| 7 | `ggerganov/llama.cpp` | C++ | +154 |
+| 8 | `langchain-ai/langchain` | Python | +142 |
+| 9 | `astral-sh/uv` | Rust | +136 |
+| 10 | `facebook/react` | JavaScript | +121 |
+
+<!-- auto_optimize:end -->
+
+---
+
 ## License
 
 [MIT](LICENSE) — built with intent by the Flowith team.
