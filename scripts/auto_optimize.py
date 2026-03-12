@@ -24,6 +24,7 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
 SCRAPER = SCRIPT_DIR / "scraper.py"
+EVOLVE = SCRIPT_DIR / "evolve.py"
 README = PROJECT_ROOT / "README.md"
 MATERIALS_OUT = PROJECT_ROOT / "materials.json"
 
@@ -204,6 +205,29 @@ def run_commit() -> bool:
 
 
 # ---------------------------------------------------------------------------
+# Step 4 — Evolve
+# ---------------------------------------------------------------------------
+
+def run_evolve() -> None:
+    """Invoke evolve.py to research trending features and update the roadmap."""
+    if not EVOLVE.exists():
+        log(f"WARNING: evolve.py not found at {EVOLVE} — skipping evolution step.")
+        return
+
+    log("Running evolve.py …")
+    result = subprocess.run(
+        [sys.executable, str(EVOLVE)],
+        capture_output=True, text=True, cwd=PROJECT_ROOT,
+    )
+    print(result.stdout.strip())
+    if result.returncode != 0:
+        print(result.stderr.strip())
+        log(f"WARNING: evolve.py exited with code {result.returncode} — continuing pipeline.")
+    else:
+        log("evolve.py completed successfully.")
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -232,7 +256,10 @@ def main() -> None:
         # 3. Commit
         committed = run_commit()
 
-        # 4. Report
+        # 4. Evolve — research new features and update roadmap
+        run_evolve()
+
+        # 5. Report
         log("=== Daily Optimization Pipeline COMPLETE ===")
         repo_count = data.get("repository_count", 0)
         source = data.get("source", "unknown")

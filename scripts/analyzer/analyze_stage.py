@@ -1,209 +1,354 @@
+"""
+Flowith Hub — Stage Analysis Engine
+Performs structural analysis on a detected learning stage and produces a
+structured analysis dict ready for the reporter.
+
+Usage (standalone CLI):
+    python scripts/analyzer/analyze_stage.py \\
+        --materials materials.json \\
+        --stage stage.json \\
+        [--output analysis.json]
+"""
+
 import argparse
 import json
 from collections import Counter
-from typing import Dict, List
 from datetime import datetime
+from typing import Dict, List, Optional
 
 
-# ======================================================
-# AI 占位层（用于验证模型是否真正介入）
-# ======================================================
+# ---------------------------------------------------------------------------
+# AI insight layer
+# ---------------------------------------------------------------------------
 
 def build_ai_prompt(stage_summary: Dict) -> str:
     """
-    冻结版 Prompt：只允许阶段语义深化，不允许长期定性
+    Construct the frozen prompt template used to request a semantic stage
+    analysis from an external LLM.
+
+    The prompt is intentionally constrained to prevent the model from making
+    long-term character judgements about the learner.  It requests exactly
+    three output sections:
+
+    1. Stage core characteristics
+    2. Possible change signals
+    3. Analytical boundaries and uncertainties
+
+    Args:
+        stage_summary: Dict containing the following keys:
+            - ``time_range``            (dict with ``start`` / ``end`` strings)
+            - ``material_count``        (int)
+            - ``total_content_length``  (int)
+            - ``themes``                (list of str)
+            - ``structure_notes``       (str)
+            - ``average_heading_count`` (float)
+            - ``skill_traces``          (dict mapping format → count)
+            - ``knowledge_gaps``        (list of relative paths)
+
+    Returns:
+        A multi-line prompt string ready to be sent to any LLM API.
     """
     return f"""
-你正在分析一个用户在某一时间阶段内的知识输入与表达材料。
-这些材料已经被结构化处理，以下是该阶段的客观统计结果。
+You are analysing a user's knowledge input and expression materials for a specific time stage.
+These materials have been structurally processed. Below are objective statistics for this stage.
 
-时间范围：{stage_summary['time_range']['start']} → {stage_summary['time_range']['end']}
-材料数量：{stage_summary['material_count']}
-总字数：{stage_summary['total_content_length']}
+Time range:        {stage_summary['time_range']['start']} → {stage_summary['time_range']['end']}
+Material count:    {stage_summary['material_count']}
+Total characters:  {stage_summary['total_content_length']}
 
-主题关键词：
+Theme keywords:
 {', '.join(stage_summary['themes'])}
 
-结构特征说明：
+Structural notes:
 {stage_summary['structure_notes']}
 
-平均标题数量：{stage_summary['average_heading_count']}
+Average heading count: {stage_summary['average_heading_count']}
 
-主要文件格式分布：
+Format distribution:
 {stage_summary['skill_traces']}
 
-潜在低密度材料：
+Potential low-density materials:
 {stage_summary['knowledge_gaps']}
 
-请完成阶段性语义分析，遵循以下约束：
-1. 只描述“这一阶段”的特征，不上升为长期结论
-2. 可指出变化、趋势或异常，但需保持可被修正的语气
-3. 不对用户能力、性格或长期身份做定性判断
-4. 不使用“一贯”“长期如此”等表述
-5. 不假设你了解该用户的全部背景
+Please complete a stage semantic analysis under these constraints:
+1. Only describe characteristics of *this stage* — do not generalise to long-term conclusions
+2. You may note changes, trends, or anomalies, but maintain a revisable tone
+3. Do not make judgements about the user's ability, character, or long-term identity
+4. Do not use phrases like "consistently" or "always has been"
+5. Do not assume you know the user's full background
 
-你的输出必须包含三部分：
-【阶段核心特征】
-【可能的变化信号】
-【当前分析的边界与不确定性】
+Your output MUST contain exactly three sections:
+[Stage Core Characteristics]
+[Possible Change Signals]
+[Analytical Boundaries and Uncertainties]
 
-请直接输出分析文本。
+Output the analysis text directly.
 """.strip()
 
 
-def ai_stage_insight(stage_summary: Dict) -> str:
+def _ai_stage_insight_placeholder(stage_summary: Dict) -> str:
     """
-    AI 阶段语义分析 —— 明确占位标记版
-    如果你在最终 Markdown 中仍然看到这段文字，
-    说明当前阶段并没有由 Agent / 模型生成真实语义分析。
-    """
+    Return the placeholder AI insight text shown when no live LLM is connected.
 
+    This makes it visually obvious in the final Markdown report that the AI
+    insight section has not been filled by a real model — it is not silently
+    empty.  Replace or wrap this function to inject live LLM responses.
+
+    Args:
+        stage_summary: Structural summary dict (accepted but not used in the
+                       placeholder; included for API parity with an LLM caller).
+
+    Returns:
+        A multi-line placeholder string with three required sections.
+    """
+    _ = stage_summary  # unused in placeholder — kept for signature parity
     return (
-        "【阶段核心特征】\n"
-        "（占位标记：如果你看到这段文字，说明当前阶段尚未由模型生成语义分析。）\n\n"
-        "【可能的变化信号】\n"
-        "（占位标记：模型尚未介入，暂无变化信号判断。）\n\n"
-        "【当前分析的边界与不确定性】\n"
-        "（占位标记：此处未使用任何大模型生成内容。）"
+        "[Stage Core Characteristics]\n"
+        "(Placeholder: no LLM has generated semantic analysis for this stage.)\n\n"
+        "[Possible Change Signals]\n"
+        "(Placeholder: no model intervention; no change signals evaluated.)\n\n"
+        "[Analytical Boundaries and Uncertainties]\n"
+        "(Placeholder: no LLM-generated content used here.)"
     )
 
 
-# ======================================================
-# 主分析逻辑（结构化分析 + AI 字段）
-# ======================================================
+# ---------------------------------------------------------------------------
+# Main analysis logic
+# ---------------------------------------------------------------------------
 
 def analyze_stage(materials: List[Dict], stage: Dict) -> Dict:
-    # 兼容 detect_stage.py 返回的字符串格式时间
-    stage_start = datetime.fromisoformat(stage["stage_start_time"]) if isinstance(stage.get("stage_start_time"), str) else stage.get("start_time")
-    stage_end = datetime.fromisoformat(stage["stage_end_time"]) if isinstance(stage.get("stage_end_time"), str) else stage.get("end_time")
+    """
+    Perform comprehensive structural analysis on a detected learning stage.
 
-    stage_files = [
-        m for m in materials
-        if m.get("ingest_time")
-        and stage_start <= datetime.fromisoformat(m["ingest_time"]) <= stage_end
-    ]
+    The function filters ``materials`` to those whose ``ingest_time`` falls
+    within the stage window, then computes:
 
-    material_count = len(stage_files)
-    total_content_length = sum(m["content_length"] for m in stage_files)
+    - **Theme structure** — top-5 heading keywords by frequency.
+    - **Cognitive pattern** — average heading count as a structural depth proxy.
+    - **Skill evolution** — file-format distribution.
+    - **Knowledge gaps** — materials with content length below the threshold.
+    - **AI insight** — placeholder (or live LLM output if injected externally).
 
-    # ---------- 主题结构分析 ----------
-    all_titles = []
+    Args:
+        materials: Full list of material dicts from the materials JSON file.
+                   Each dict must include at minimum:
+                   ``ingest_time`` (ISO string), ``content_length`` (int),
+                   ``heading_count`` (int), ``headings`` (list of str),
+                   ``file_type`` (str), ``relative_path`` (str).
+        stage:     Stage dict as returned by :func:`detect_stage`, containing
+                   ``stage_start_time``, ``stage_end_time``, ``stage_id``,
+                   and ``stage_detected_reason``.
+
+    Returns:
+        Analysis dict with the following top-level keys::
+
+            {
+                "stage_id":                   str,
+                "generated_at":               str,   # "%Y-%m-%d %H:%M:%S"
+                "analysis_completeness":      str,   # "complete" | "partial"
+                "stage_context_analysis":     dict,
+                "theme_structure_analysis":   dict,
+                "cognitive_pattern_analysis": dict,
+                "skill_evolution_analysis":   dict,
+                "knowledge_gap_analysis":     dict,
+                "ai_stage_insight":           str,
+            }
+    """
+    # Parse stage window boundaries
+    try:
+        stage_start = datetime.fromisoformat(stage["stage_start_time"])
+        stage_end   = datetime.fromisoformat(stage["stage_end_time"])
+    except (KeyError, ValueError) as exc:
+        raise ValueError(f"Invalid stage time bounds: {exc}") from exc
+
+    # Filter materials to those within the stage window
+    stage_files: List[Dict] = []
+    for m in materials:
+        ingest_time = m.get("ingest_time")
+        if not ingest_time:
+            continue
+        try:
+            ts = datetime.fromisoformat(ingest_time)
+        except (ValueError, TypeError):
+            continue
+        if stage_start <= ts <= stage_end:
+            stage_files.append(m)
+
+    material_count      = len(stage_files)
+    total_content_length = sum(m.get("content_length", 0) for m in stage_files)
+
+    # ------------------------------------------------------------------
+    # Theme structure analysis
+    # ------------------------------------------------------------------
+    all_headings: List[str] = []
     for m in stage_files:
-        all_titles.extend(m.get("headings", []))
+        all_headings.extend(m.get("headings", []))
 
-    theme_counter = Counter(all_titles)
-    core_themes = [k for k, _ in theme_counter.most_common(5)]
+    theme_counter = Counter(all_headings)
+    core_themes   = [k for k, _ in theme_counter.most_common(5)]
 
-    theme_structure_analysis = {
+    theme_structure_analysis: Dict = {
         "core_themes": core_themes,
         "structure_notes": (
-            "标题与主题出现频率较为集中，材料整体具备一定主题聚焦度。"
+            "Heading and theme frequency is concentrated — materials show "
+            "a reasonably focused topical scope."
             if core_themes else
-            "标题信息有限，主题结构尚不明显。"
-        )
+            "Heading data is limited; thematic structure is not yet apparent."
+        ),
     }
 
-    # ---------- 认知模式 ----------
-    avg_heading_count = (
-        sum(m["heading_count"] for m in stage_files) / material_count
-        if material_count else 0
+    # ------------------------------------------------------------------
+    # Cognitive pattern analysis
+    # ------------------------------------------------------------------
+    avg_heading_count: float = (
+        sum(m.get("heading_count", 0) for m in stage_files) / material_count
+        if material_count else 0.0
     )
 
-    cognitive_pattern_analysis = {
+    cognitive_pattern_analysis: Dict = {
         "average_heading_count": round(avg_heading_count, 2),
         "pattern_note": (
-            "文本结构清晰，具备较强的分段与组织意识。"
+            "Text structure is clear — materials show deliberate segmentation "
+            "and organisational intent."
             if avg_heading_count >= 5 else
-            "文本结构相对扁平，更多呈现为连续记录。"
-        )
+            "Text structure is relatively flat — content reads more as continuous "
+            "capture than structured notes."
+        ),
     }
 
-    # ---------- 技能使用痕迹 ----------
-    format_counter = Counter(m["file_type"] for m in stage_files)
+    # ------------------------------------------------------------------
+    # Skill evolution / format distribution
+    # ------------------------------------------------------------------
+    format_counter = Counter(m.get("file_type", "unknown") for m in stage_files)
 
-    skill_evolution_analysis = {
+    skill_evolution_analysis: Dict = {
         "dominant_formats": dict(format_counter),
-        "skill_trace_note": "当前阶段主要通过文本方式进行知识记录与整理。"
+        "skill_trace_note": (
+            "Knowledge recording in this stage is primarily text-based."
+        ),
     }
 
-    # ---------- 知识断层 ----------
-    low_density = [
-        m["relative_path"]
+    # ------------------------------------------------------------------
+    # Knowledge gap analysis (low-density materials < 300 chars)
+    # ------------------------------------------------------------------
+    LOW_DENSITY_THRESHOLD = 300
+    low_density: List[str] = [
+        m.get("relative_path", "(unknown)")
         for m in stage_files
-        if m["content_length"] < 300
+        if m.get("content_length", 0) < LOW_DENSITY_THRESHOLD
     ]
 
-    knowledge_gap_analysis = {
+    knowledge_gap_analysis: Dict = {
         "low_density_materials": low_density,
         "gap_note": (
-            "部分材料内容较为简略，可能仍处于占位或初步记录状态。"
+            "Some materials are brief — they may be placeholders or early-stage "
+            "capture notes that need expansion."
             if low_density else
-            "当前阶段材料整体信息密度较为均衡。"
-        )
+            "Material information density is reasonably balanced across this stage."
+        ),
     }
 
-    # ---------- 阶段上下文 ----------
-    stage_context_analysis = {
+    # ------------------------------------------------------------------
+    # Stage context summary
+    # ------------------------------------------------------------------
+    stage_context_analysis: Dict = {
         "time_range": {
             "start": stage_start.strftime("%Y-%m-%d"),
-            "end": stage_end.strftime("%Y-%m-%d")
+            "end":   stage_end.strftime("%Y-%m-%d"),
         },
-        "material_count": material_count,
+        "material_count":      material_count,
         "total_content_length": total_content_length,
         "stage_rationale": stage.get(
-            "stage_detected_reason", "在指定时间窗口内检测到集中输入。"
-        )
+            "stage_detected_reason",
+            "Concentrated input detected within the specified time window."
+        ),
     }
 
-    # ---------- AI 阶段语义深化 ----------
-    stage_summary_for_ai = {
-        "time_range": stage_context_analysis["time_range"],
-        "material_count": material_count,
-        "total_content_length": total_content_length,
-        "themes": theme_structure_analysis["core_themes"],
-        "structure_notes": theme_structure_analysis["structure_notes"],
+    # ------------------------------------------------------------------
+    # AI semantic insight
+    # ------------------------------------------------------------------
+    stage_summary_for_ai: Dict = {
+        "time_range":            stage_context_analysis["time_range"],
+        "material_count":        material_count,
+        "total_content_length":  total_content_length,
+        "themes":                theme_structure_analysis["core_themes"],
+        "structure_notes":       theme_structure_analysis["structure_notes"],
         "average_heading_count": cognitive_pattern_analysis["average_heading_count"],
-        "skill_traces": dict(format_counter),
-        "knowledge_gaps": low_density
+        "skill_traces":          dict(format_counter),
+        "knowledge_gaps":        low_density,
     }
 
-    ai_insight = ai_stage_insight(stage_summary_for_ai)
+    ai_insight = _ai_stage_insight_placeholder(stage_summary_for_ai)
 
-    # ---------- 汇总输出 ----------
+    # ------------------------------------------------------------------
+    # Assemble output
+    # ------------------------------------------------------------------
+    completeness = "complete" if material_count > 0 else "partial"
+
     return {
-        "stage_id": stage["stage_id"],
-        "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "analysis_completeness": "complete",
-        "stage_context_analysis": stage_context_analysis,
-        "theme_structure_analysis": theme_structure_analysis,
+        "stage_id":                   stage["stage_id"],
+        "generated_at":               datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "analysis_completeness":      completeness,
+        "stage_context_analysis":     stage_context_analysis,
+        "theme_structure_analysis":   theme_structure_analysis,
         "cognitive_pattern_analysis": cognitive_pattern_analysis,
-        "skill_evolution_analysis": skill_evolution_analysis,
-        "knowledge_gap_analysis": knowledge_gap_analysis,
-        "ai_stage_insight": ai_insight
+        "skill_evolution_analysis":   skill_evolution_analysis,
+        "knowledge_gap_analysis":     knowledge_gap_analysis,
+        "ai_stage_insight":           ai_insight,
     }
+
+
+# ---------------------------------------------------------------------------
+# CLI entry point
+# ---------------------------------------------------------------------------
+
+def main() -> None:
+    """
+    Standalone CLI entry point for running the analysis stage in isolation.
+
+    Loads a materials JSON and a stage JSON, calls :func:`analyze_stage`,
+    and writes the result to ``--output`` or prints a completion message.
+    """
+    parser = argparse.ArgumentParser(
+        description="Flowith Hub — Stage Analysis (standalone)"
+    )
+    parser.add_argument(
+        "--materials",
+        required=True,
+        help="Path to materials JSON file",
+    )
+    parser.add_argument(
+        "--stage",
+        required=True,
+        help="Path to stage JSON file (output of detect_stage)",
+    )
+    parser.add_argument(
+        "--output",
+        default=None,
+        help="Optional path to write analysis JSON output",
+    )
+    args = parser.parse_args()
+
+    with open(args.materials, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    materials = data["materials"] if isinstance(data, dict) and "materials" in data else data
+
+    with open(args.stage, "r", encoding="utf-8") as f:
+        stage = json.load(f)
+
+    try:
+        analysis = analyze_stage(materials, stage)
+    except ValueError as exc:
+        print(f"[analyze_stage] ERROR: {exc}")
+        raise SystemExit(1) from exc
+
+    if args.output:
+        with open(args.output, "w", encoding="utf-8") as f:
+            json.dump(analysis, f, ensure_ascii=False, indent=2)
+        print(f"[analyze_stage] Analysis written to: {args.output}")
+    else:
+        print(f"[analyze_stage] Analysis generated for stage: {analysis['stage_id']}")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--materials")
-    parser.add_argument("--stage")
-    parser.add_argument("--output")
-    args = parser.parse_args()
-
-    if not args.materials or not args.stage:
-        print("[analyze_stage] materials and stage files required")
-    else:
-        with open(args.materials, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        materials = data["materials"] if isinstance(data, dict) and "materials" in data else data
-
-        with open(args.stage, "r", encoding="utf-8") as f:
-            stage = json.load(f)
-
-        analysis = analyze_stage(materials, stage)
-
-        if args.output:
-            with open(args.output, "w", encoding="utf-8") as f:
-                json.dump(analysis, f, ensure_ascii=False, indent=2)
-        else:
-            print("[analyze_stage] analysis generated")
+    main()
