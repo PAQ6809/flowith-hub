@@ -1,11 +1,11 @@
 {
   "source": "simulated",
-  "scraped_at": "2026-03-12T18:01:05",
+  "scraped_at": "2026-03-13T07:43:41",
   "repository_count": 10,
   "materials": [
     {
       "relative_path": "trending/anthropics_claude-code.md",
-      "ingest_time": "2026-03-12T18:01:05",
+      "ingest_time": "2026-03-13T07:43:41",
       "content_length": 750,
       "heading_count": 4,
       "headings": [
@@ -29,7 +29,7 @@
     },
     {
       "relative_path": "trending/openai_openai-python.md",
-      "ingest_time": "2026-03-12T02:01:05",
+      "ingest_time": "2026-03-12T15:43:41",
       "content_length": 731,
       "heading_count": 4,
       "headings": [
@@ -53,7 +53,7 @@
     },
     {
       "relative_path": "trending/vercel_next.js.md",
-      "ingest_time": "2026-03-11T10:01:05",
+      "ingest_time": "2026-03-11T23:43:41",
       "content_length": 739,
       "heading_count": 5,
       "headings": [
@@ -78,7 +78,7 @@
     },
     {
       "relative_path": "trending/microsoft_vscode.md",
-      "ingest_time": "2026-03-10T18:01:05",
+      "ingest_time": "2026-03-11T07:43:41",
       "content_length": 734,
       "heading_count": 5,
       "headings": [
@@ -103,7 +103,7 @@
     },
     {
       "relative_path": "trending/huggingface_transformers.md",
-      "ingest_time": "2026-03-10T02:01:05",
+      "ingest_time": "2026-03-10T15:43:41",
       "content_length": 757,
       "heading_count": 5,
       "headings": [
@@ -128,7 +128,7 @@
     },
     {
       "relative_path": "trending/rust-lang_rust.md",
-      "ingest_time": "2026-03-09T10:01:05",
+      "ingest_time": "2026-03-09T23:43:41",
       "content_length": 717,
       "heading_count": 3,
       "headings": [
@@ -151,7 +151,7 @@
     },
     {
       "relative_path": "trending/ggerganov_llama.cpp.md",
-      "ingest_time": "2026-03-08T18:01:05",
+      "ingest_time": "2026-03-09T07:43:41",
       "content_length": 730,
       "heading_count": 3,
       "headings": [
@@ -174,7 +174,7 @@
     },
     {
       "relative_path": "trending/langchain-ai_langchain.md",
-      "ingest_time": "2026-03-08T02:01:05",
+      "ingest_time": "2026-03-08T15:43:41",
       "content_length": 752,
       "heading_count": 4,
       "headings": [
@@ -198,7 +198,7 @@
     },
     {
       "relative_path": "trending/astral-sh_uv.md",
-      "ingest_time": "2026-03-07T10:01:05",
+      "ingest_time": "2026-03-07T23:43:41",
       "content_length": 712,
       "heading_count": 3,
       "headings": [
@@ -221,7 +221,7 @@
     },
     {
       "relative_path": "trending/facebook_react.md",
-      "ingest_time": "2026-03-06T18:01:05",
+      "ingest_time": "2026-03-07T07:43:41",
       "content_length": 725,
       "heading_count": 2,
       "headings": [
@@ -243,7 +243,7 @@
     }
   ],
   "trending_context": {
-    "scraped_at": "2026-03-12T18:01:05",
+    "scraped_at": "2026-03-13T07:43:41",
     "repositories": [
       {
         "rank": 1,
